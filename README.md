@@ -1,4 +1,6 @@
-# merry-fxmas
+# merry-fxmas-dylan
+
+[![Build Status](https://travis-ci.org/FranklinChen/merry-fxmas-dylan.png)](https://travis-ci.org/FranklinChen/merry-fxmas-dylan)
 
 Say "Merry Christmas" 25 times, using a syntactic macro in Dylan.
 

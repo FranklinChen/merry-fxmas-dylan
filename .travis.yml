@@ -1,0 +1,8 @@
+language: objective-c
+
+before_install:
+  - curl http://opendylan.org/downloads/opendylan/2014.1/opendylan-2014.1-x86-darwin.tar.bz2 | (cd $HOME; tar zxf -)
+  - export PATH=$HOME/opendylan-2014.1/bin:$PATH
+
+script:
+  - make run
