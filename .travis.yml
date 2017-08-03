@@ -1,15 +1,20 @@
 sudo: false
 language: c
-cache:
-  directories:
-    - $HOME/Open-Dylan/
+matrix:
+  include:
+    - os: linux
+      env: ARCHIVE=https://opendylan.org/downloads/opendylan/2014.1/opendylan-2014.1-x86_64-linux.tar.bz2
+    - os: osx
+      osx_image: xcode8.3
+      env: ARCHIVE=https://web.archive.org/web/20170402235928/http://opendylan.org/downloads/opendylan/2014.1/opendylan-2014.1-x86-darwin.tar.bz2
 addons:
   apt:
     packages:
     - libgc-dev
  
 before_install:
-  - curl https://opendylan.org/downloads/opendylan/2014.1/opendylan-2014.1-x86_64-linux.tar.bz2 | tar -C $HOME -jxf -
+  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then brew install bdw-gc; fi
+  - curl $ARCHIVE | tar -C $HOME -jxf -
   - export PATH=$HOME/opendylan-2014.1/bin:$PATH
 
 script:
