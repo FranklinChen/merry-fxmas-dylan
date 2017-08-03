@@ -1,8 +1,15 @@
 sudo: false
-language: objective-c
-
+language: c
+cache:
+  directories:
+    - $HOME/Open-Dylan/
+addons:
+  apt:
+    packages:
+    - libgc-dev
+ 
 before_install:
-  - curl http://opendylan.org/downloads/opendylan/2014.1/opendylan-2014.1-x86-darwin.tar.bz2 | (cd $HOME; tar zxf -)
+  - curl https://opendylan.org/downloads/opendylan/2014.1/opendylan-2014.1-x86_64-linux.tar.bz2 | tar -C $HOME -jxf -
   - export PATH=$HOME/opendylan-2014.1/bin:$PATH
 
 script:
