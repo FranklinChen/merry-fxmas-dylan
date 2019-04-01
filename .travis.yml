@@ -2,6 +2,7 @@ language: c
 matrix:
   include:
     - os: linux
+      dist: xenial
       env: ARCHIVE=https://opendylan.org/downloads/opendylan/2019.1/opendylan-2019.1-x86_64-linux.tar.bz2
     - os: osx
       env: ARCHIVE=https://opendylan.org/downloads/opendylan/2019.1/opendylan-2019.1-x86_64-darwin.tar.bz2
