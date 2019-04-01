@@ -9,6 +9,7 @@ addons:
   apt:
     packages:
     - libgc-dev
+    - libunwind-dev
  
 before_install:
   - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then brew install bdw-gc; fi
