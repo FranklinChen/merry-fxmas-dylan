@@ -1,0 +1,117 @@
+name: build-and-test
+
+on:
+  # Build every push, on every branch, so work-in-progress branches get the
+  # same feedback as main.
+  push:
+  # Pull requests always target main in this repository.
+  pull_request:
+    branches:
+      - main
+  # Allow repositories using a merge queue to reuse this workflow.
+  merge_group:
+  # Enables the "Run workflow" button on the Actions tab.
+  workflow_dispatch:
+
+# The default is broad write access on some repositories. The build only
+# reads code, so narrow it.
+permissions:
+  contents: read
+
+# Cancel superseded runs on the same ref. Push-to-main and pushes to the same
+# branch are merged under one ref, so repeated pushes stop paying for stale
+# builds.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    # The matrix is not a decoration; one failing OS must not mask the other.
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      # Must come first: actions/checkout clears the workspace directory, so
+      # anything installed into it beforehand would be deleted.
+      - uses: actions/checkout@v7
+
+      # Puts dylan-compiler and deft on the PATH.
+      #
+      # Pin the action itself to an exact release; its floating major is known
+      # to lag the releases it fronts. Pin the compiler with `tag` too, so an
+      # upgrade is a deliberate edit instead of a surprise upstream default.
+      # Current pins: install-opendylan v3.4.0, Open Dylan v2026.2.0.
+      - uses: dylan-lang/install-opendylan@v3.4.0
+        with:
+          tag: v2026.2.0
+
+      - name: Install dependencies and generate the registry
+        run: deft update
+
+      # `deft build` exits 0 even when the compiler fails and emits no
+      # binaries (verified against deft v0.13.0), so its exit status is not a
+      # gate on its own. Assert the artifacts it was supposed to produce
+      # actually exist.
+      - name: Build all libraries
+        run: |
+          deft build --all
+          for binary in merry-fxmas-app merry-fxmas-test-suite; do
+            if [ ! -x "_build/bin/$binary" ]; then
+              echo "deft build reported success but _build/bin/$binary is missing" >&2
+              exit 1
+            fi
+          done
+
+      # Building is not enough: a macro that expands to the wrong calls still
+      # compiles. This runs the real linked binary, which also covers the app
+      # layer (main, *standard-output*, force-output, exit status) that the
+      # library test suite never touches.
+      - name: Run the application
+        run: |
+          # Keep the output in a shell variable so nothing is left behind in
+          # the workspace, even when an assertion fails.
+          app_output=$(./_build/bin/merry-fxmas-app)
+          # Check content, not just quantity: 25 lines of anything would pass
+          # a bare line count.
+          if [ "$(printf '%s\n' "$app_output" | head -n 1)" != "Merry Christmas Bill 25!" ]; then
+            echo "Unexpected first greeting" >&2
+            exit 1
+          fi
+          if [ "$(printf '%s\n' "$app_output" | tail -n 1)" != "Merry Christmas Bill 1!" ]; then
+            echo "Unexpected last greeting" >&2
+            exit 1
+          fi
+          printf '%s\n' "$app_output"
+
+      - name: Run the test suite
+        run: deft test
+
+  # Kept a separate job: linting the workflow does not need a Dylan toolchain,
+  # and it must run even when the build matrix fails.
+  lint-workflow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      # actionlint also runs shellcheck over the `run:` blocks above, which is
+      # the project's shell-script gate. Install the exact release tarball and
+      # verify its sha256 before executing it; do not curl-and-run a script.
+      - name: Install actionlint
+        env:
+          ACTIONLINT_VERSION: 1.7.12
+          ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+        run: |
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -fSLo "$archive" \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/${archive}"
+          echo "${ACTIONLINT_SHA256}  ${archive}" | sha256sum --check
+          tar -xzf "$archive" actionlint
+
+      - name: Lint the workflow
+        run: ./actionlint -color

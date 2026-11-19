@@ -1,0 +1,12 @@
+{
+    "dependencies": [ ],
+    "dev-dependencies": [ "testworks" ],
+    "description": "Say \"Merry Christmas\" 25 times, using a syntactic macro in Dylan",
+    "name": "merry-fxmas",
+    "version": "1.0.0",
+    "url": "https://github.com/FranklinChen/merry-fxmas-dylan",
+    "keywords": [ "macro", "example", "christmas" ],
+    "contact": "https://github.com/FranklinChen/merry-fxmas-dylan/issues",
+    "license": "MIT",
+    "license-url": "https://github.com/FranklinChen/merry-fxmas-dylan/blob/main/LICENSE"
+}
